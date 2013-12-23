@@ -7,6 +7,9 @@ module MeteorMotion
 			@subscriptions = {}
 			@method_callbacks = {}
 
+			@auth_client = nil
+			@auth_key = nil
+
 			@ddp = MeteorMotion::DDP.new self
 			@error_handler = nil
 		end
@@ -53,6 +56,18 @@ module MeteorMotion
 		end
 
 
+		# Methods for SRP authentication
+		#
+		def login_with_username username, password, callback
+			@method_callbacks['login'] = callback
+			if !@auth_client
+				@auth_client = SRT::Client.new
+			end
+
+			@ddp.call( 'beginPasswordExchange')
+		end
+
+
 		def on_error method
 			@error_handler = method
 		end
@@ -89,9 +104,6 @@ module MeteorMotion
 
 		private
 			def background_method_handler obj
-				puts obj[:method]
-				puts obj[:method].class
-				
 				obj[:method].call( obj[:action], obj[:result])
 			end
 

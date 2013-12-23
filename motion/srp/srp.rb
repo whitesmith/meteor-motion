@@ -41,14 +41,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 module SRP
   class << self
 
-    def sha1_hex(h)
-      # Replaced with rubymotion compliant digest
-      RmDigest::SHA1.hexdigest([h].pack('H*'))
+    def sha256_hex(h)
+      # Replaced with rubymotion compliant digest and SHA256
+      RmDigest::SHA256.hexdigest([h].pack('H*'))
     end
 
-    def sha1_str(s)
-      # Replaced with rubymotion compliant digest
-      RmDigest::SHA1.hexdigest(s)
+    def sha256_str(s)
+      # Replaced with rubymotion compliant digest and SHA256
+      RmDigest::SHA256.hexdigest(s)
     end
 
     def bigrand(bytes)
@@ -67,7 +67,7 @@ module SRP
       end
     end
 
-    # SHA1 hashing function with padding.
+    # SHA256 hashing function with padding.
     # Input is prefixed with 0 to meet N hex width.
     def H(n, *a)
       nlen = 2 * ((('%x' % [n]).length * 4 + 7) >> 3)
@@ -79,7 +79,7 @@ module SRP
         end
         "0" * (nlen - shex.length) + shex
       }.join('')
-      sha1_hex(hashin).hex % n
+      sha256_hex(hashin).hex % n
     end
 
     # Multiplier parameter
@@ -92,7 +92,7 @@ module SRP
     # x = H(salt || H(username || ':' || password))
     def calc_x(username, password, salt)
       spad = if salt.length.odd? then '0' else '' end
-      sha1_hex(spad + salt + sha1_str([username, password].join(':'))).hex
+      sha256_hex(spad + salt + sha256_str([username, password].join(':'))).hex
     end
 
     # Random scrambling parameter
@@ -131,10 +131,10 @@ module SRP
 
     # M = H(H(N) xor H(g), H(I), s, A, B, K)
     def calc_M(username, xsalt, xaa, xbb, xkk, n, g)
-      hn = sha1_hex("%x" % n).hex
-      hg = sha1_hex("%x" % g).hex
+      hn = sha256_hex("%x" % n).hex
+      hg = sha256_hex("%x" % g).hex
       hxor = "%x" % (hn ^ hg)
-      hi = sha1_str(username)
+      hi = sha256_str(username)
       return H(n, hxor, hi, xsalt, xaa, xbb, xkk)
     end
 
@@ -358,7 +358,7 @@ module SRP
 
       # calculate session key
       @S = "%x" % SRP.calc_server_S(@A.to_i(16), @b, v, u, @N)
-      @K = SRP.sha1_hex(@S)
+      @K = SRP.sha256_hex(@S)
 
       # calculate match
       @M = "%x" % SRP.calc_M(username, xsalt, @A, @B, @K, @N, @g)
@@ -418,7 +418,7 @@ module SRP
 
       # calculate session key
       @S = "%x" % SRP.calc_client_S(bb, @a, @k, x, u, @N, @g)
-      @K = SRP.sha1_hex(@S)
+      @K = SRP.sha256_hex(@S)
 
       # calculate match
       @M = "%x" % SRP.calc_M(username, xsalt, @A, xbb, @K, @N, @g)

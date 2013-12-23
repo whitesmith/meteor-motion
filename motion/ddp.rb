@@ -90,7 +90,7 @@ module MeteorMotion
 			end
 
 			def handle_message msg
-				puts msg
+				#puts msg
 				json_string = msg.dataUsingEncoding(NSUTF8StringEncoding)
     		e = Pointer.new(:object)
     		data = NSJSONSerialization.JSONObjectWithData(json_string, options:0, error: e)
