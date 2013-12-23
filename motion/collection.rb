@@ -5,7 +5,7 @@ module MeteorMotion
 		def initialize name
 			@name = name
 			@objects = {}
-			@observers = {}
+			@observers = []
 		end
 
 		def add id, fields
@@ -48,12 +48,12 @@ module MeteorMotion
 		end
 
 
-		def add_observer object, method
-			@observers[object] = method
+		def add_observer method
+			@observers << method
 		end
 
-		def remove_observer object
-			@observers.delete(object)
+		def remove_observer method
+			@observers.delete( method )
 		end
 
 		private
@@ -65,9 +65,9 @@ module MeteorMotion
 			# These callbacks should be done as background tasks to prevent the connection thread from holding in intensive tasks
 			#
 			def background_notify object
-				observers.each do |observer, method_name|
+				observers.each do |method_name|
 					#puts "Calling method with action #{object[:action]}"
-					observer.method(method_name).call( object[:action], object[:id] )
+					method_name.call( object[:action], object[:id] )
 				end
 			end
 	end

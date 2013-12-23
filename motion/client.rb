@@ -49,12 +49,12 @@ module MeteorMotion
 		def call method_name, callback, params=[]
 			method_id = @ddp.call(method_name, params)
 
-			@method_callbacks[method_id] = {object: callback[:object], method: callback[:method], result: false, updated: false}
+			@method_callbacks[method_id] = { method: callback, result: false, updated: false}
 		end
 
 
-		def on_error object, method
-			@error_handler = {object: object, method: method}
+		def on_error method
+			@error_handler = method
 		end
 
 		# Methods required for MeteorMotion::DDP delegation
@@ -62,9 +62,13 @@ module MeteorMotion
 		def handle_method id, action, result
 			callback = @method_callbacks[id]
 
-			obj = {object: callback[:object], method: callback[:method], action: action, result: result}
+			obj = { method: callback[:method], action: action, result: result}
 
 			self.performSelectorInBackground('background_method_handler:', withObject: obj)
+
+			if callback[action] == :error
+				callback[action] = :result
+			end
 
 			callback[action] = true
 			if callback[:result] && callback[:updated]
@@ -76,7 +80,7 @@ module MeteorMotion
 
 		def error code, reason, details
 			if @error_handler
-				obj = {object: @error_handler[:object], method: @error_handler[:method], code: code, reason: reason, details: details}
+				obj = { method: @error_handler, code: code, reason: reason, details: details}
 				self.performSelectorInBackground('background_error_handler:', withObject: obj)
 			else
 				#TODO: silent error handling
@@ -85,11 +89,14 @@ module MeteorMotion
 
 		private
 			def background_method_handler obj
-				obj[:object].method(obj[:method]).call( obj[:action], obj[:result])
+				puts obj[:method]
+				puts obj[:method].class
+				
+				obj[:method].call( obj[:action], obj[:result])
 			end
 
 			def background_error_handler obj
-				obj[:object].method(obj[:method]).call( obj[:code], obj[:reason], obj[:details])
+				obj[:method].call( obj[:code], obj[:reason], obj[:details])
 			end
 
 	end

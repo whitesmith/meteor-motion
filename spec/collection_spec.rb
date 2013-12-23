@@ -62,12 +62,12 @@ describe MeteorMotion::Collection do
 		end
 
 		it 'adds an observer to the collection' do
-			@coll.add_observer(self, :collection_handler)
+			@coll.add_observer( self.method(:collection_handler) )
 			@coll.observers.size.should.be.equal 1
 		end
 
 		it 'notifies a subscribed observer after adding an item' do
-			@coll.add_observer(self, :collection_handler)
+			@coll.add_observer( self.method(:collection_handler) )
 			@coll.add('abc', {a: 1, b:2})
 
 			wait 1.0 do
@@ -76,7 +76,7 @@ describe MeteorMotion::Collection do
 		end
 
 		it 'notifies a subscribed observer after updating an item' do
-			@coll.add_observer(self, :collection_handler)
+			@coll.add_observer( self.method(:collection_handler) )
 			@coll.add('abc', {a: 1, b:2})
 
 			wait 1.0 do
@@ -89,7 +89,7 @@ describe MeteorMotion::Collection do
 		end
 
 		it 'notifies a subscribed observer after removing an item' do
-			@coll.add_observer(self, :collection_handler)
+			@coll.add_observer( self.method(:collection_handler) )
 			@coll.add('abc', {a: 1, b:2})
 
 			wait 1.0 do
@@ -102,10 +102,10 @@ describe MeteorMotion::Collection do
 		end
 
 		it 'removes observers from the collection' do
-			@coll.add_observer(self, :collection_handler)
+			@coll.add_observer( self.method(:collection_handler) )
 			@coll.observers.size.should.be.equal 1
 
-			@coll.remove_observer(self)
+			@coll.remove_observer( self.method(:collection_handler) )
 			@coll.observers.size.should.be.equal 0
 		end
 

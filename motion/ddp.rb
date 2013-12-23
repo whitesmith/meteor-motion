@@ -125,7 +125,7 @@ module MeteorMotion
 					end
 				when 'result'
 					if data[:error]
-						@delegate.error( data[:error][:error], data[:error][:reason], data[:error][:details] )
+						@delegate.handle_method( data[:id], :error, data[:error] )
 					else
 						@delegate.handle_method( data[:id], :result, data[:result] )
 					end

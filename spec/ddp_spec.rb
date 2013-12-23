@@ -68,12 +68,10 @@ describe MeteorMotion::DDP do
 
 	describe 'method calls' do
 
-		def error code, reason, details
-			@error_msg = reason
-		end
-
 		def handle_method id, type, results
-			@success = results
+			if results
+				@success = results
+			end
 		end
 
 		before do
@@ -103,7 +101,7 @@ describe MeteorMotion::DDP do
 			@ddp.call('someMethod')
 
 			wait 1.0 do
-				@error_msg.should.be.equal 'Method not found'
+				@success[:reason].should.be.equal 'Method not found'
 			end
 		end
 

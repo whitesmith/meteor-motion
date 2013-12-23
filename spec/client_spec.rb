@@ -31,36 +31,32 @@ describe MeteorMotion::Client do
 
 	describe 'Method calls' do
 
-		def error code, reason, details
-			@error = :error
-		end
-
 		def handler action, result
-			@called = :handler
+			@called << action
 		end
 
 		before do
-			@client.on_error(self, :error)
+			@called = []
 		end
 
 		it 'calls the specified callback when called' do
-			@client.call('ping', {object: self, method: :handler} )
+			@client.call('ping', self.method(:handler) )
 
 			wait 1.0 do
-				@called.should.be.equal :handler
+				@called.include?(:result).should.be.equal true
 			end
 		end
 
-		it 'calls the provided error handler when a call fails' do
-			@client.call('some_method', {object: self, method: :handler} )
+		it 'calls the provided handler with an error when a call fails' do
+			@client.call('some_method', self.method(:handler) )
 
 			wait 1.0 do
-				@error.should.be.equal :error
+				@called.include?(:error).should.be.equal true
 			end
 		end
 
 		it 'removes a callback after both replies have been received' do
-			@client.call('ping', {object: self, method: :handler} )
+			@client.call('ping', self.method(:handler) )
 
 			@client.method_callbacks.size.should.be.equal 1
 
