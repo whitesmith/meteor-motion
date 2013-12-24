@@ -47,7 +47,6 @@ In order to receive data, you need to first create a local collection to handle 
 
 ```ruby
 def collection_handler action, id
->>>>>>> efa51dd07f00ab376f04fe3f9c3ad7e47bfb49d6
     # action - will be one of [:added, :changed, :removed]
     # id - the id of the element of the collection affected
 end
@@ -109,7 +108,6 @@ Then run the tests with rake:
 
 ```bash
 rake spec
->>>>>>> efa51dd07f00ab376f04fe3f9c3ad7e47bfb49d6
 ```
 
 ## Contributing
