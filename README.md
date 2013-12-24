@@ -66,8 +66,8 @@ When there is data available, you can access objects on the collection:
 
 ```ruby
 object = collection.find(id)
-att1 = book['att1']
-att2 = book['att2']
+att1 = object['att1']
+att2 = object['att2']
 ```
 
 ### Method calls
