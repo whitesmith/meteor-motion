@@ -51,10 +51,6 @@ module SecureRandom
   def self.random_bytes(n=nil)
     n ||= 16
 
-    if defined? OpenSSL::Random
-      return OpenSSL::Random.random_bytes(n)
-    end
-
     if !defined?(@has_urandom) || @has_urandom
       flags = File::RDONLY
       flags |= File::NONBLOCK if defined? File::NONBLOCK

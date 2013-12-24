@@ -17,3 +17,12 @@ Books.insert({
   author: 'Ray Bradbury',
   year: '1966'
 });
+
+
+Meteor.users.remove({});
+
+Accounts.createUser({
+  username: 'user',
+  email: 'user@email.com',
+  password: 'pass'
+});

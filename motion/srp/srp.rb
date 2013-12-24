@@ -1,53 +1,9 @@
 # -*- encoding: utf-8 -*-
-=begin
-This is a pure Ruby implementation of the Secure Remote
-Password protocol (SRP-6a). SRP is a cryptographically
-strong authentication protocol for password-based, mutual
-authentication over an insecure network connection.
-
-References
- * http://srp.stanford.edu/
- * http://srp.stanford.edu/demo/demo.html
-
-Copyright (c) 2012, Mikael Lammentausta
-All rights reserved.
-
-Following is the New BSD license:
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
-    * Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above copyright
-      notice, this list of conditions and the following disclaimer in the
-      documentation and/or other materials provided with the distribution.
-    * Neither the name of the Python Software Foundation nor the
-      names of its contributors may be used to endorse or promote products
-      derived from this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL TOM COCAGNE BE LIABLE FOR ANY
-DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-=end
 
 module SRP
   class << self
 
-    def sha256_hex(h)
-      # Replaced with rubymotion compliant digest and SHA256
-      RmDigest::SHA256.hexdigest([h].pack('H*'))
-    end
-
-    def sha256_str(s)
-      # Replaced with rubymotion compliant digest and SHA256
+    def sha256(s)
       RmDigest::SHA256.hexdigest(s)
     end
 
@@ -65,82 +21,6 @@ module SRP
         return r if n == 0
         a = a * a % m
       end
-    end
-
-    # SHA256 hashing function with padding.
-    # Input is prefixed with 0 to meet N hex width.
-    def H(n, *a)
-      nlen = 2 * ((('%x' % [n]).length * 4 + 7) >> 3)
-      hashin = a.map {|s|
-        next unless s
-        shex = s.class == String ? s : "%x" % s
-        if shex.length > nlen
-            raise "Bit width does not match - client uses different prime"
-        end
-        "0" * (nlen - shex.length) + shex
-      }.join('')
-      sha256_hex(hashin).hex % n
-    end
-
-    # Multiplier parameter
-    # k = H(N, g)   (in SRP-6a)
-    def calc_k(n, g)
-      H(n, n, g)
-    end
-
-    # Private key (derived from username, raw password and salt)
-    # x = H(salt || H(username || ':' || password))
-    def calc_x(username, password, salt)
-      spad = if salt.length.odd? then '0' else '' end
-      sha256_hex(spad + salt + sha256_str([username, password].join(':'))).hex
-    end
-
-    # Random scrambling parameter
-    # u = H(A, B)
-    def calc_u(xaa, xbb, n)
-      H(n, xaa, xbb)
-    end
-
-    # Password verifier
-    # v = g^x (mod N)
-    def calc_v(x, n, g)
-      modpow(g, x, n)
-    end
-
-    # A = g^a (mod N)
-    def calc_A(a, n, g)
-      modpow(g, a, n)
-    end
-
-    # B = g^b + k v (mod N)
-    def calc_B(b, k, v, n, g)
-      (modpow(g, b, n) + k * v) % n
-    end
-
-    # Client secret
-    # S = (B - (k * g^x)) ^ (a + (u * x)) % N
-    def calc_client_S(bb, a, k, x, u, n, g)
-      modpow((bb - k * modpow(g, x, n)) % n, (a+ x * u), n)
-    end
-
-    # Server secret
-    # S = (A * v^u) ^ b % N
-    def calc_server_S(aa, b, v, u, n)
-      modpow((modpow(v, u, n) * aa), b, n)
-    end
-
-    # M = H(H(N) xor H(g), H(I), s, A, B, K)
-    def calc_M(username, xsalt, xaa, xbb, xkk, n, g)
-      hn = sha256_hex("%x" % n).hex
-      hg = sha256_hex("%x" % g).hex
-      hxor = "%x" % (hn ^ hg)
-      hi = sha256_str(username)
-      return H(n, hxor, hi, xsalt, xaa, xbb, xkk)
-    end
-
-    # H(A, M, K)
-    def calc_H_AMK(xaa, xmm, xkk, n, g)
-      H(n, xaa, xmm, xkk)
     end
 
     def Ng(group)
@@ -308,139 +188,63 @@ module SRP
   end
 
 
-  class Verifier
-    attr_reader :N, :g, :k, :A, :B, :b, :S, :K, :M, :H_AMK
-
-    def initialize group=1024
-      # select modulus (N) and generator (g)
-      @N, @g = SRP.Ng group
-      @k = SRP.calc_k(@N, @g)
-    end
-
-    # Initial user creation for the persistance layer.
-    # Not part of the authentication process.
-    # Returns { <username>, <password verifier>, <salt> }
-    def generate_userauth username, password
-      @salt ||= random_salt
-      x = SRP.calc_x(username, password, @salt)
-      v = SRP.calc_v(x, @N, @g)
-      return {:username => username, :verifier => "%x" % v, :salt => @salt}
-    end
-
-    # Authentication phase 1 - create challenge.
-    # Returns Hash with challenge for client and proof to be stored on server.
-    # Parameters should be given in hex.
-    def get_challenge_and_proof username, xverifier, xsalt, xaa
-      # SRP-6a safety check
-      return false if (xaa.to_i(16) % @N) == 0
-      generate_B(xverifier)
-      return {
-        :challenge    => {:B => @B, :salt => xsalt},
-        :proof        => {:A => xaa, :B => @B, :b => "%x" % @b,
-                          :I => username, :s => xsalt, :v => xverifier}
-      }
-    end
-
-    # returns H_AMK on success, None on failure
-    # User -> Host:  M = H(H(N) xor H(g), H(I), s, A, B, K)
-    # Host -> User:  H(A, M, K)
-    def verify_session proof, client_M
-      @A = proof[:A]
-      @B = proof[:B]
-      @b = proof[:b].to_i(16)
-      username = proof[:I]
-      xsalt = proof[:s]
-      v = proof[:v].to_i(16)
-
-      u = SRP.calc_u(@A, @B, @N)
-      # SRP-6a safety check
-      return false if u == 0
-
-      # calculate session key
-      @S = "%x" % SRP.calc_server_S(@A.to_i(16), @b, v, u, @N)
-      @K = SRP.sha256_hex(@S)
-
-      # calculate match
-      @M = "%x" % SRP.calc_M(username, xsalt, @A, @B, @K, @N, @g)
-
-      if @M == client_M
-        # authentication succeeded
-        @H_AMK = "%x" % SRP.calc_H_AMK(@A, @M, @K, @N, @g)
-        return @H_AMK
-      end
-      return false
-    end
-
-    def random_salt
-      "%x" % SRP.bigrand(10).hex
-    end
-
-    def random_bignum
-      SRP.bigrand(32).hex
-    end
-
-    # generates challenge
-    # input verifier in hex
-    def generate_B xverifier
-      v = xverifier.to_i(16)
-      @b ||= random_bignum
-      @B = "%x" % SRP.calc_B(@b, k, v, @N, @g)
-    end
-  end # Verifier
-
-
   class Client
-    attr_reader :N, :g, :k, :a, :A, :S, :K, :M, :H_AMK
+    attr_reader :N, :g, :k, :a, :A, :S, :K, :M, :HAMK
 
     def initialize group=1024
       # select modulus (N) and generator (g)
       @N, @g = SRP.Ng group
-      @k = SRP.calc_k(@N, @g)
+      @k = SRP.sha256( @N.to_s(16) + @g.to_s(16) ).hex
     end
 
     def start_authentication
-      generate_A
+      while !@A || (@A % @N == 0 ) do
+        @a = random_bignum
+        @A = SRP.modpow(@g, @a, @N)
+      end
+
+      return @A.to_s(16)
     end
 
     # Process initiated authentication challenge.
     # Returns M if authentication is successful, false otherwise.
-    # Salt and B should be given in hex.
-    def process_challenge username, password, xsalt, xbb
-      bb = xbb.to_i(16)
-      # SRP-6a safety check
-      return false if (bb % @N) == 0
+    # Implemented based on client definition in Meteor source
+    # Note: This varies a bit form the SRP def
+    #
+    def process_challenge identity, password, salt_str, b_str
 
-      x = SRP.calc_x(username, password, xsalt)
-      u = SRP.calc_u(@A, xbb, @N)
+      b_int = b_str.to_i(16)
+      # SRP-6a safety check
+      return false if (b_int % @N) == 0
+
+      u = SRP.sha256( @A.to_s(16) + b_str ).hex
+      x = SRP.sha256( salt_str + SRP.sha256( identity + ":" + password ) ).hex
 
       # SRP-6a safety check
       return false if u == 0
 
       # calculate session key
-      @S = "%x" % SRP.calc_client_S(bb, @a, @k, x, u, @N, @g)
-      @K = SRP.sha256_hex(@S)
+      kgx = k * SRP.modpow(@g, x, @N)
+      aux = @a + ( u * x )
+      @S = SRP.modpow( b_int - kgx, aux, @N)
 
       # calculate match
-      @M = "%x" % SRP.calc_M(username, xsalt, @A, xbb, @K, @N, @g)
+      @M = SRP.sha256( @A.to_s(16) + b_str + @S.to_s(16) )
 
       # calculate verifier
-      @H_AMK = "%x" % SRP.calc_H_AMK(@A, @M, @K, @N, @g)
+      @HAMK = SRP.sha256( @A.to_s(16) + @M + @S.to_s(16) )
 
       return @M
     end
 
     def verify server_HAMK
-      return false unless @H_AMK
-      @H_AMK == server_HAMK
+      return false unless @HAMK
+      @HAMK == server_HAMK
     end
 
     def random_bignum
       SRP.bigrand(32).hex
     end
 
-    def generate_A
-      @a ||= random_bignum
-      @A = "%x" % SRP.calc_A(@a, @N, @g)
-    end
   end # Client
 end

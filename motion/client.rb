@@ -9,6 +9,8 @@ module MeteorMotion
 
 			@auth_client = nil
 			@auth_key = nil
+			@username = nil
+			@password = nil
 
 			@ddp = MeteorMotion::DDP.new self
 			@error_handler = nil
@@ -60,11 +62,53 @@ module MeteorMotion
 		#
 		def login_with_username username, password, callback
 			@method_callbacks['login'] = callback
-			if !@auth_client
-				@auth_client = SRT::Client.new
+			@auth_client = SRP::Client.new
+			@username = username
+			@password = password
+			
+
+			a = @auth_client.start_authentication()
+			id = @ddp.call( 'beginPasswordExchange', { 'A' => a, user: { username: username } } )
+
+			@method_callbacks[id] = { method: self.method(:handle_login_challenge), result: false, updated: false }
+		end
+
+		def handle_login_challenge action, result
+			if action == :updated
+				return
+			elsif action == :error
+				obj = { method: @method_callbacks['login'], action: action, result: result }
+				self.performSelectorInBackground('background_method_handler:', withObject: obj)
+
+				@method_callbacks.delete('login') 
+				return
 			end
 
-			@ddp.call( 'beginPasswordExchange')
+			m = @auth_client.process_challenge(result['identity'], @password, result['salt'], result['B'])
+			id = @ddp.call( 'login', {srp: {'M' => m} } )
+
+			@method_callbacks[id] = { method: self.method(:verify_login), result: false, updated: false }
+		end
+
+		def verify_login action, result
+			if action == :updated
+				return
+			elsif action == :error
+				obj = { method: @method_callbacks['login'], action: action, result: result }
+				self.performSelectorInBackground('background_method_handler:', withObject: obj)
+
+				@method_callbacks.delete('login') 
+				return
+			end
+
+			if @auth_client.verify result['HAMK']
+				obj = { method: @method_callbacks['login'], action: :success, result: nil }
+			else
+				obj = { method: @method_callbacks['login'], action: :error, result: {reason: 'Failed HAMK validation.'} }
+			end
+
+			self.performSelectorInBackground('background_method_handler:', withObject: obj)
+			@method_callbacks.delete('login') 
 		end
 
 
@@ -76,6 +120,10 @@ module MeteorMotion
 		#
 		def handle_method id, action, result
 			callback = @method_callbacks[id]
+
+			if !callback
+				return
+			end
 
 			obj = { method: callback[:method], action: action, result: result}
 

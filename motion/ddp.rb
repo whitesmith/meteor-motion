@@ -90,7 +90,7 @@ module MeteorMotion
 			end
 
 			def handle_message msg
-				#puts msg
+				puts msg
 				json_string = msg.dataUsingEncoding(NSUTF8StringEncoding)
     		e = Pointer.new(:object)
     		data = NSJSONSerialization.JSONObjectWithData(json_string, options:0, error: e)
@@ -147,7 +147,12 @@ module MeteorMotion
 					return []
 				end
 
-				return params.each.map {|k,v| {k => v} }
+				#return params.each.map {|k,v| {k => v} }
+				if params.kind_of?(Array)
+					return params
+				else
+					return [params]
+				end
 			end
 
 	end
