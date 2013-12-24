@@ -46,20 +46,28 @@ By default, it will expand the hostname to ```http://hostname:port/websocket``` 
 In order to receive data, you need to first create a local collection to handle the data. You should add an observer to this collection, that will be called whenever the data in the collection is changed.
 
 ```ruby
-def book_handler action, id
+def collection_handler action, id
     # action - will be one of [:added, :changed, :removed]
     # id - the id of the element of the collection affected
 end
 
-books = client.add_collection('books')
-books.add_observer( self.method(:book_handler) )
+collection = client.add_collection('collection_name')
+collection.add_observer( self.method(:collection_handler) )
 ```
 
-To remove an observer, simply call ```books.remove_observer( method )```. With a collection setup, you can subscribe/unsubscribe to data published on the server with:
+To remove an observer, simply call ```collection.remove_observer( method )```. With a collection setup, you can subscribe/unsubscribe to data published on the server with:
 
 ```ruby
 client.subscribe('subscription_name', params)
 client.unsubscribe('subscription_name')
+```
+
+When there is data available, you can access objects on the collection:
+
+```ruby
+object = collection.find(id)
+att1 = book['att1']
+att2 = book['att2']
 ```
 
 ### Method calls
