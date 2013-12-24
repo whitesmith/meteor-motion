@@ -66,4 +66,39 @@ describe MeteorMotion::Client do
 		end
 	end
 
+	describe 'Authentication with username' do
+
+		def login_handler action, result
+			@action = action
+			@result = result
+		end
+
+		it 'logins successfully with a correct u/p combo' do
+			@client.login_with_username('user', 'pass', self.method(:login_handler))
+
+			wait 3.0 do
+				@action.should == :success
+			end
+		end
+
+		it 'fails to login with an invalid username' do
+			@client.login_with_username('no_such_user', 'pass', self.method(:login_handler))
+
+			wait 2.0 do
+				@action.should == :error
+				@result[:reason].should == 'User not found'
+			end
+		end
+
+		it 'fails to login with an incorrect password' do
+			@client.login_with_username('user', 'wrong_pass', self.method(:login_handler))
+
+			wait 3.0 do
+				@action.should == :error
+				@result[:reason].should == 'Incorrect password'
+			end
+		end
+
+	end
+
 end
