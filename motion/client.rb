@@ -17,10 +17,20 @@ module MeteorMotion
 		end
 
 
-		def connect hostname='localhost', port=3000
+		def connect hostname='localhost', port=3000, callback=nil
 			@ddp.connect hostname, port
+			if callback
+				@method_callbacks['connect'] = callback
+			end
 		end
 
+		def handle_connect status
+			if @method_callbacks['connect']
+				obj = { method: @method_callbacks['connect'], action: status == :success, result: nil}
+				self.performSelectorInBackground('background_method_handler:', withObject: obj)
+				@method_callbacks.delete('connect')
+			end
+		end
 
 		def add_collection name
 			if @collections[name]

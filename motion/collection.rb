@@ -15,7 +15,7 @@ module MeteorMotion
 
 
 		def update id, fields, cleared
-			obj = @objects[id]
+			obj = @objects[id].mutableCopy
 
 			if fields
 				fields.each do |k, v|
@@ -37,6 +37,10 @@ module MeteorMotion
 		def remove id
 			@objects.delete(id)
 			notify_observers :removed, id
+		end
+
+		def all
+			@objects.map { |k,v| v.merge({:_id => k }) }
 		end
 
 		def find id

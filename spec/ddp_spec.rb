@@ -1,5 +1,13 @@
 describe MeteorMotion::DDP do
+	def handle_connect result
+		@result = result
+	end
+
 	describe 'connect' do
+		def error code, reason, details
+			return
+		end
+
 		it 'connects with a valid hostname' do
 			ddp = MeteorMotion::DDP.new self
 			ddp.connect
@@ -14,8 +22,10 @@ describe MeteorMotion::DDP do
 	describe 'subscriptions' do
 
 		def error code, reason, details
-			@error_msg = reason
-			resume
+			if reason != :unknown
+				@error_msg = reason
+				resume
+			end
 		end
 
 		def collections
@@ -67,6 +77,10 @@ describe MeteorMotion::DDP do
 
 
 	describe 'method calls' do
+
+		def error code, reason, details
+			return
+		end
 
 		def handle_method id, type, results
 			if results

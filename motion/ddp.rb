@@ -85,22 +85,24 @@ module MeteorMotion
 
 		private
 			def send_message msg
-				#puts BW::JSON.generate(msg)
+				puts "==> " + BW::JSON.generate(msg).to_s
 				@ws.send BW::JSON.generate(msg)
 			end
 
 			def handle_message msg
-				#puts msg
+				puts "<== " + msg.to_s
 				json_string = msg.dataUsingEncoding(NSUTF8StringEncoding)
-    		e = Pointer.new(:object)
-    		data = NSJSONSerialization.JSONObjectWithData(json_string, options:0, error: e)
+				e = Pointer.new(:object)
+				data = NSJSONSerialization.JSONObjectWithData(json_string, options:0, error: e)
 
 				case data[:msg]
 				when 'connected'
 					@status = :connected
 					@session = data[:session]
+					@delegate.handle_connect :success
 				when 'failed'
 					#TODO: Handle failed connections better
+					@delegate.handle_connect :failed
 				when 'nosub'
 					if data[:error]
 						@delegate.error( data[:error][:error], data[:error][:reason], data[:error][:details] )
@@ -137,7 +139,7 @@ module MeteorMotion
 					@delegate.error( nil, data[:reason], data[:offendingMessage] ) 
 
 				else
-					puts "Received unknown message: #{msg}\n"
+					@delegate.error( nil, :unknown, msg)
 				end
 				
 			end

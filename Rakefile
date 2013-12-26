@@ -6,3 +6,9 @@ require 'bubble-wrap/test'
 require 'bubble-wrap/core'
 Bundler.setup
 Bundler.require
+
+Motion::Project::App.setup do |app|
+  # Use `rake config' to see complete project settings.
+  app.name = 'MeteorMotion Example'
+  app.delegate_class = "AppDelegate"
+end
