@@ -112,7 +112,11 @@ rake spec
 
 ### Example app
 
-You can find a working example in the ```app``` directory. Remember to run the meteor server prior to starting the application. To login, use the credentials ```user/pass```.
+You can find a working example in the ```app``` directory. Remember to run the meteor server prior to starting the application. To login, use the credentials ```user/pass```. To run the application in the simulator simply run:
+
+```bash
+rake
+```
 
 ## Contributing
 
