@@ -30,7 +30,12 @@ Create a new MeteorMotion client and connect to your Meteor app:
 
 ```ruby
 client = MeteorMotion::Client.new
-client.connect('localhost', 3000)
+client.connect('localhost', 3000, self.method(:on_connect) )
+
+def on_connect status
+    # Handler for the connection attempt - optional
+    # status - either true or false
+end
 
 def error_handler code, reason, details
     # Handler for general connection errors, malformed messages and failed subscriptions
