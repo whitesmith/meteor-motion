@@ -17,3 +17,4 @@ test/version_tmp
 tmp
 build
 private-docs
+vendor/**/build-iPhoneSimulator
