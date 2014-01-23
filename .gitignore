@@ -18,3 +18,4 @@ tmp
 build
 private-docs
 vendor/**/build*
+**/.DS_Store

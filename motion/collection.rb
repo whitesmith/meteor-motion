@@ -4,54 +4,26 @@ module MeteorMotion
 
 		def initialize name
 			@name = name
-			@objects = {}
 			@observers = []
 		end
 
+		# Method hooks - be sure to call super after reimplementing these
+		# Right now these are here more for testing purposes, should be reimplemented as a hook with some testing compromise
+		#
 		def add id, fields
-			@objects[id] = fields
 			notify_observers :added, id
 		end
 
-
 		def update id, fields, cleared
-			obj = @objects[id].mutableCopy
-
-			if fields
-				fields.each do |k, v|
-					obj[k] = v
-				end
-			end
-
-			if cleared
-				cleared.each do |key|
-					obj.delete(key)
-				end
-			end
-
-			@objects[id] = obj
 			notify_observers :changed, id
 		end
 
-
 		def remove id
-			@objects.delete(id)
 			notify_observers :removed, id
 		end
 
-		def all
-			@objects.map { |k,v| v.merge({:_id => k }) }
-		end
-
-		def find id
-			return @objects[id]
-		end
-
-		def size
-			return @objects.size
-		end
-
-
+		# Observer methods
+		#
 		def add_observer method
 			@observers << method
 		end
