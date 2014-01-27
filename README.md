@@ -75,6 +75,25 @@ att1 = object['att1']
 att2 = object['att2']
 ```
 
+### Model Adapters
+Meteor-Motion supports, for the time being, and adapter to be used with the [MotionModel gem](https://github.com/sxross/MotionModel). After installing it, simply define your model classes as such:
+
+```ruby
+class Objects
+    include MotionModel::Model
+    include MotionModel::ArrayModelAdapter
+    include MeteorMotion::Adapters::MotionModel
+
+    columns :id, :string
+    #...
+end
+
+client.add_collection(Objects, name='objects')
+
+```
+
+The ```id```column is mandatory, so that MeteorMotion does not auto-generate and id column with an integer type, which is incompatible with Meteor standard. Also, take care that if you ommit the ```name``` parameter when adding the collection, the collection name will default to the downcased name of your class. After this setup, enjoy MotionModel as usual.
+
 ### Method calls
 
 ```ruby
