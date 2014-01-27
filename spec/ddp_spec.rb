@@ -39,7 +39,7 @@ describe MeteorMotion::DDP do
 		before do
 			@ddp = MeteorMotion::DDP.new self
 			@ddp.connect
-			@collections = {'books' => MeteorMotion::Collection.new('books') }
+			@collections = {'books' => MeteorMotion::Collections::Default.new('books') }
 			@subscriptions = {}
 
 			wait 1.0 do

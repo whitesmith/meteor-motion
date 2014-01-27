@@ -14,6 +14,8 @@ module MeteorMotion
 
 			@ddp = MeteorMotion::DDP.new self
 			@error_handler = nil
+
+			MeteorMotion::Adapters::MotionModel.set_client(self)
 		end
 
 
@@ -32,14 +34,18 @@ module MeteorMotion
 			end
 		end
 
-		def add_collection name
-			if @collections[name]
-				raise "A MeteorMotion::Collection named '#{name}' already exists."
+		def add_collection klass, name = ""
+			if klass.is_a? String
+				if @collections[klass]
+					raise "A MeteorMotion::Collection named '#{klass}' already exists."
+				end
+
+				@collections[klass] = MeteorMotion::Collections::Default.new klass
+			else
+				coll = MeteorMotion::Collections::MotionModel.new klass, name
+
+				@collections[coll.name] = coll
 			end
-
-			@collections[name] = MeteorMotion::Collection.new name
-
-			return @collections[name]
 		end
 
 
