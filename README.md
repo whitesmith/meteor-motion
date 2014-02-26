@@ -142,6 +142,21 @@ You can find a working example in the ```app``` directory. Remember to run the m
 rake
 ```
 
+## Credits
+### Developed by
+<a href="http://whitesmith.co/">
+    <img src="http://www.whitesmith.co/assets/logo-whitesmith-4109176a79f86b9ca4b8022d6dcab3bb.png" alt="http://whitesmith.co/" height=100px />
+</a>
+
+Lead Developer: [mtavaresOS](https://github.com/mtavaresOS)
+
+### Sponsored by
+<a href="http://www.revokom.com/">
+    <img src="http://www.revokom.com/img/logo_banner.png" alt="http://www.revokom.com/"/>
+</a>
+
+
+
 ## Contributing
 
 1. Fork it
