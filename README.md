@@ -148,7 +148,7 @@ rake
     <img src="http://www.whitesmith.co/assets/logo-whitesmith-4109176a79f86b9ca4b8022d6dcab3bb.png" alt="http://whitesmith.co/" height=100px />
 </a>
 
-Lead Developer: [mtavaresOS](https://github.com/mtavaresOS)
+Lead Developer: [mgontav](https://github.com/mgontav)
 
 ### Sponsored by
 <a href="http://www.revokom.com/">
